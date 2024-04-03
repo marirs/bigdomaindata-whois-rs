@@ -1,0 +1,17 @@
+[package]
+name = "whois"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+mongodb = "2.8.2"
+log = "0.4.21"
+simple_logger = "4.3.3"
+futures = "0.3"
+thiserror = "1.0.58"
+serde = { version = "1.0.197", features = ["derive"] }
+csv = "1.3.0"
+serde_yaml = "0.9"
+clap = { version = "4.5.4", features = ["derive"] }
