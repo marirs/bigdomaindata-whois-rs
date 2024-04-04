@@ -1,9 +1,0 @@
-data_path: ./data # The folder that contains the data files
-
-db: # The MongoDb database configuration
-  host: localhost
-  port: 27017
-  username: username
-  password: password
-  database: whois
-  collection: records

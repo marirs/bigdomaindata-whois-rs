@@ -1,4 +1,9 @@
-/target
-/Cargo.lock
+target/
+Cargo.lock
 
-/data
+data/
+
+.DS_Store
+.idea/
+.vscode/
+.vs_code/
