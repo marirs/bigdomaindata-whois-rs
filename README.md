@@ -34,3 +34,6 @@ Options:
 ```bash
 ./whois --csv-files-path /path/to/csv/files --mongo-host 10.10.10.10 --mongo-port 27017 --mongo-db whois --mongo-collection feeds
 ```
+
+---
+License: MIT
