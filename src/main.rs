@@ -1,22 +1,42 @@
-use clap::Parser;
-use log::{debug, info};
-use mongodb::bson::doc;
+use config::CliOpts;
+use lazy_static::lazy_static;
+use log::info;
 use mongodb::Client;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+use std::fs::read_to_string;
 use std::process::exit;
+use std::time::Instant;
 use tokio::spawn;
 
+mod config;
+mod db;
 mod error;
 
 type Result<T> = std::result::Result<T, error::Error>;
 
-/// Mongo URL
-const MONGODB_URL: &str = "mongodb://localhost:27017/whois";
-/// Mongo Database
-const MONGODB_DB: &str = "whois";
-/// Mongo Collection
-const MONGODB_COLLECTION: &str = "feeds";
+lazy_static! {
+    static ref MONGODB_URL: String = if CliOpts::parse_cli().mongo_user.is_empty()
+        && CliOpts::parse_cli().mongo_password.is_empty()
+    {
+        format!(
+            "mongodb://{}:{}",
+            CliOpts::parse_cli().mongo_host,
+            CliOpts::parse_cli().mongo_port
+        )
+    } else {
+        format!(
+            "mongodb://{}:{}@{}:{}",
+            CliOpts::parse_cli().mongo_user,
+            CliOpts::parse_cli().mongo_password,
+            CliOpts::parse_cli().mongo_host,
+            CliOpts::parse_cli().mongo_port
+        )
+    };
+    static ref MONGODB_DB: String = CliOpts::parse_cli().mongo_db;
+    static ref MONGODB_COLLECTION: String = CliOpts::parse_cli().mongo_collection;
+    static ref CSV_FILES_PATH: String = CliOpts::parse_cli().csv_files_path;
+    static ref DEBUG: bool = CliOpts::parse_cli().debug;
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct WhoIsRecord {
@@ -44,35 +64,28 @@ pub struct WhoIsRecord {
     pub name_servers: Option<String>,
 }
 
-#[derive(Clone, Parser, Debug)]
-#[command(version, about, long_about = None)]
-pub struct CliOpts {
-    /// The path to the CSV files.
-    #[arg(
-        short = 'f',
-        long,
-        value_name = "CSV-FILES-PATH",
-        default_value = "./data"
-    )]
-    pub csv_files_path: String,
-}
-
 #[tokio::main]
 async fn main() {
-    let opts: CliOpts = CliOpts::parse();
-    simple_logger::init_with_level(log::Level::Debug).ok();
-    info!("Reading the directory: {:?}", opts.csv_files_path);
-    if let Err(e) = read_directory(&opts.csv_files_path).await {
+    let start = Instant::now();
+    info!("Starting the program...");
+    if DEBUG.to_owned() {
+        simple_logger::init_with_level(log::Level::Debug).ok();
+        info!("Debug mode enabled.");
+    } else {
+        simple_logger::init_with_level(log::Level::Info).ok();
+    }
+    if let Err(e) = read_directory(&CSV_FILES_PATH).await {
         eprintln!("Error reading the directory: {:?}", e);
         exit(1);
     }
-    info!("Successfully read the directory.");
+    info!("Reading from CSV and writing into Mongo: Success.");
+    info!("Elapsed time: {:?} seconds", start.elapsed().as_secs());
 }
 
 pub async fn read_directory(source_folder: &str) -> Result<()> {
     //! Read all the csv files in the directory and parse the csv content into whois records. The
     //! records are then saved to a MongoDB database.
-    let mongo_client = Client::with_uri_str(MONGODB_URL).await?;
+    let mongo_client = Client::with_uri_str(MONGODB_URL.as_str()).await?;
     let paths = std::fs::read_dir(source_folder)?;
     for path in paths {
         // TODO: Check if the file is a csv file
@@ -84,9 +97,17 @@ pub async fn read_directory(source_folder: &str) -> Result<()> {
             if path.is_file() {
                 let file_path = path.to_str().unwrap();
                 let mongo_client_ref = mongo_client.clone();
-                let racords = read_file(file_path).unwrap();
+                let records = read_file(file_path).unwrap();
+                info!("Found {} records in the file {}", records.len(), file_path);
                 // save the records
-                save_to_db(mongo_client_ref, racords).await.unwrap();
+                db::upsert(
+                    mongo_client_ref,
+                    MONGODB_DB.as_str(),
+                    MONGODB_COLLECTION.as_str(),
+                    records,
+                )
+                .await
+                .unwrap();
             }
         })
         .await?;
@@ -95,68 +116,13 @@ pub async fn read_directory(source_folder: &str) -> Result<()> {
 }
 
 pub fn read_file(file_path: &str) -> Result<Vec<WhoIsRecord>> {
-    //! Read the file asynchronously and parse the csv content into a whois record.
-    let file = File::open(file_path)?;
-    let mut reader = csv::Reader::from_reader(file);
-    let iter = reader.deserialize();
-    let mut records = Vec::new();
-    for result in iter {
-        let record: WhoIsRecord = result?;
-        records.push(record);
-    }
-    info!("Found {} records in the file", records.len());
-    Ok(records)
+    //! Read the file and deserialize the csv content into a whois record.
+    Ok(csv_de(&read_to_string(file_path)?)?)
 }
 
-pub async fn save_to_db(client: Client, records: Vec<WhoIsRecord>) -> Result<()> {
-    //! Save the `whois` records to a MongoDB database. The database name and collection name is
-    //! read from the config file. This function basically insert the records into the collection but
-    //! if the record already exists in the collection, it updates the record.
-    let db = client.database(MONGODB_DB);
-    let collection = db.collection::<WhoIsRecord>(MONGODB_COLLECTION);
-    info!("Saving records to the database. This may take a while...");
-    let mut join_handles = Vec::new();
-    for record in records {
-        debug!("Saving record number - {}...", record.num);
-        // Use a thread pool to quickly and efficiently save the records.
-        let collection = collection.clone();
-        join_handles.push(spawn(async move {
-            // Check if the record exists in the db, if it does update else insert.
-
-            let filter = doc! {
-                "domain_name": &record.domain_name
-            };
-            let update = doc! {
-                "$set": {
-                    "domain_keyword": &record.domain_keyword,
-                    "domain_tld": &record.domain_tld,
-                    "query_time": &record.query_time,
-                    "create_date": &record.create_date,
-                    "update_date": &record.update_date,
-                    "expiry_date": &record.expiry_date,
-                    "registrar_iana": &record.registrar_iana,
-                    "registrar_name": &record.registrar_name,
-                    "registrar_website": &record.registrar_website,
-                    "registrant_name": &record.registrant_name,
-                    "registrant_company": &record.registrant_company,
-                    "registrant_address": &record.registrant_address,
-                    "registrant_city": &record.registrant_city,
-                    "registrant_state": &record.registrant_state,
-                    "registrant_zip": &record.registrant_zip,
-                    "registrant_country": &record.registrant_country,
-                    "registrant_phone": &record.registrant_phone,
-                    "registrant_fax": &record.registrant_fax,
-                    "registrant_email": &record.registrant_email,
-                    "name_servers": &record.name_servers
-                }
-            };
-            let options = mongodb::options::UpdateOptions::builder()
-                .upsert(true)
-                .build();
-            collection.update_one(filter, update, options).await.ok();
-        }));
-    }
-    futures::future::join_all(join_handles).await;
-    info!("Successfully saved records to the database");
-    Ok(())
+/// deserialize the csv text into a vector of `WhoIsRecord`
+fn csv_de(csv_text: &str) -> std::result::Result<Vec<WhoIsRecord>, csv::Error> {
+    csv::Reader::from_reader(csv_text.as_bytes())
+        .deserialize()
+        .collect()
 }
