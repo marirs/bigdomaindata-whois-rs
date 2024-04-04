@@ -1,7 +1,6 @@
 use crate::WhoIsRecord;
 use log::{debug, info};
-use mongodb::bson::doc;
-use mongodb::Client;
+use mongodb::{bson::doc, Client};
 use tokio::spawn;
 
 pub(crate) async fn upsert(

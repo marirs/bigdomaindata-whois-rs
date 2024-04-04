@@ -3,9 +3,7 @@ use lazy_static::lazy_static;
 use log::info;
 use mongodb::Client;
 use serde::{Deserialize, Serialize};
-use std::fs::read_to_string;
-use std::process::exit;
-use std::time::Instant;
+use std::{fs::read_to_string, process::exit, time::Instant};
 use tokio::spawn;
 
 mod config;
