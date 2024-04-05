@@ -1,7 +1,12 @@
 use crate::WhoIsRecord;
 use log::{debug, info};
-use mongodb::{bson::doc, Client};
-use tokio::spawn;
+use mongodb::{
+    bson::{doc},
+    options::UpdateOptions,
+    sync::Client
+};
+use tokio::task::spawn_blocking;
+
 
 pub(crate) async fn upsert(
     client: Client,
@@ -14,15 +19,13 @@ pub(crate) async fn upsert(
     //! if the record already exists in the collection, it updates the record.
     let db = client.database(database);
     let collection = db.collection::<WhoIsRecord>(collection);
-    info!("Saving records to the database. This may take a while...");
     let mut join_handles = Vec::new();
     for record in records {
-        debug!("Saving record number - {}...", record.num);
         // Use a thread pool to quickly and efficiently save the records.
         let collection = collection.clone();
-        join_handles.push(spawn(async move {
+        join_handles.push(spawn_blocking(move || {
+            debug!("Saving record number - {}...", record.num);
             // Check if the record exists in the db, if it does update else insert.
-
             let filter = doc! {
                 "domain_name": &record.domain_name
             };
@@ -50,10 +53,10 @@ pub(crate) async fn upsert(
                     "name_servers": &record.name_servers
                 }
             };
-            let options = mongodb::options::UpdateOptions::builder()
+            let options = UpdateOptions::builder()
                 .upsert(true)
                 .build();
-            collection.update_one(filter, update, options).await.ok();
+            collection.update_one(filter, update, options).ok();
         }));
     }
     futures::future::join_all(join_handles).await;
