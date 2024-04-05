@@ -139,10 +139,8 @@ pub async fn read_directory(source_folder: &str) -> Result<()> {
                 // let records = records.iter().map(|r| r.into()).collect::<Vec<_>>();
                 info!("Found {} records in the file {}", records.len(), file_path);
                 // Chunk the records into 5000 records and save them
-                let records = records[0..100000].to_vec();
-                
                 let chunked_records = records
-                    .chunks(1000)
+                    .chunks(5000)
                     .map(|x| x.to_vec())
                     .collect::<Vec<_>>();
                 let mut handles = Vec::new();
