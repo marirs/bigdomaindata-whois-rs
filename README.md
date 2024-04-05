@@ -19,10 +19,10 @@ Options:
   -d, --mongo-db <MONGO-DB>                  MongoDB database [default: whois]
   -c, --mongo-collection <MONGO-COLLECTION>  MongoDB collection [default: feeds]
   -t, --threads <THREADS>                    Number of threads to use [default: 512]
-  --mongo-user <MONGO-USER>              MongoDB User [default: ]
-  --mongo-password <MONGO-PASSWORD>      MongoDB Password [default: ]
-  --debug                                Enable debug mode
-  --help                                 
+      --mongo-user <MONGO-USER>              MongoDB User [default: ]
+      --mongo-password <MONGO-PASSWORD>      MongoDB Password [default: ]
+      --debug                                Enable debug mode
+      --help                                 
   -V, --version                              Print version
 ```
 
