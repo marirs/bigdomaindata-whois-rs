@@ -18,10 +18,11 @@ Options:
   -p, --mongo-port <MONGO-PORT>              MongoDB port [default: 27017]
   -d, --mongo-db <MONGO-DB>                  MongoDB database [default: whois]
   -c, --mongo-collection <MONGO-COLLECTION>  MongoDB collection [default: feeds]
-      --mongo-user <MONGO-USER>              MongoDB User [default: ]
-      --mongo-password <MONGO-PASSWORD>      MongoDB Password [default: ]
-      --debug                                Enable debug mode
-      --help                                 
+  -t, --threads <THREADS>                    Number of threads to use [default: 512]
+  --mongo-user <MONGO-USER>              MongoDB User [default: ]
+  --mongo-password <MONGO-PASSWORD>      MongoDB Password [default: ]
+  --debug                                Enable debug mode
+  --help                                 
   -V, --version                              Print version
 ```
 
