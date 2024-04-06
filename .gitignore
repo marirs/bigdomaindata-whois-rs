@@ -7,3 +7,5 @@ data/
 .idea/
 .vscode/
 .vs_code/
+tmp/
+temp/
