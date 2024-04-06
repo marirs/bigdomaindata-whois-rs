@@ -1,14 +1,15 @@
 use config::CliOpts;
 use lazy_static::lazy_static;
 use log::info;
+use mongodb::bson::{doc, Document};
 use mongodb::sync::Client;
 use serde::{Deserialize, Serialize};
-use std::{fs::read_to_string, process::exit, time::Instant};
 use std::sync::Arc;
-use mongodb::bson::{doc, Document};
+use std::{fs::read_to_string, process::exit, time::Instant};
 use tokio::spawn;
 
 mod config;
+mod daily;
 mod db;
 mod error;
 
@@ -94,8 +95,6 @@ impl From<&WhoIsRecord> for Document {
     }
 }
 
-
-
 fn main() {
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .max_blocking_threads(*THREADS)
@@ -139,24 +138,22 @@ pub async fn read_directory(source_folder: &str) -> Result<()> {
                 // let records = records.iter().map(|r| r.into()).collect::<Vec<_>>();
                 info!("Found {} records in the file {}", records.len(), file_path);
                 // Chunk the records into 5000 records and save them
-                let chunked_records = records
-                    .chunks(5000)
-                    .map(|x| x.to_vec())
-                    .collect::<Vec<_>>();
+                let chunked_records = records.chunks(5000).map(|x| x.to_vec()).collect::<Vec<_>>();
                 let mut handles = Vec::new();
                 info!("Saving records to the database. This may take a while...");
                 for records in chunked_records {
                     let mongo_client_ref = mongo_client_ref.clone();
                     handles.push(spawn(async move {
-                            let mongo_client_ref = mongo_client_ref.clone();
-                            // save the records
-                            db::upsert(
-                                mongo_client_ref.clone(),
-                                MONGODB_DB.as_str(),
-                                MONGODB_COLLECTION.as_str(),
-                                records.to_vec(),
-                            )
-                                .await.unwrap();
+                        let mongo_client_ref = mongo_client_ref.clone();
+                        // save the records
+                        db::upsert(
+                            mongo_client_ref.clone(),
+                            MONGODB_DB.as_str(),
+                            MONGODB_COLLECTION.as_str(),
+                            records.to_vec(),
+                        )
+                        .await
+                        .unwrap();
                     }));
                 }
                 futures::future::join_all(handles).await;

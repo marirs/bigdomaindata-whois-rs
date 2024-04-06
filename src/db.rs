@@ -1,12 +1,7 @@
 use crate::WhoIsRecord;
 use log::{debug, info};
-use mongodb::{
-    bson::{doc},
-    options::UpdateOptions,
-    sync::Client
-};
+use mongodb::{bson::doc, options::UpdateOptions, sync::Client};
 use tokio::task::spawn_blocking;
-
 
 pub(crate) async fn upsert(
     client: Client,
@@ -53,9 +48,7 @@ pub(crate) async fn upsert(
                     "name_servers": &record.name_servers
                 }
             };
-            let options = UpdateOptions::builder()
-                .upsert(true)
-                .build();
+            let options = UpdateOptions::builder().upsert(true).build();
             collection.update_one(filter, update, options).ok();
         }));
     }
