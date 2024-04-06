@@ -6,7 +6,7 @@ description = "Convert BigDomain Whois CSV data to MongoDB"
 keywords = ["whois", "mongodb", "csv", "bigdomain", "data"]
 repository = "https://github.com/marirs/bigdomaindata-whois-rs"
 readme = "README.md"
-License = "LICENSE"
+license = "LICENSE"
 edition = "2021"
 
 [dependencies]
