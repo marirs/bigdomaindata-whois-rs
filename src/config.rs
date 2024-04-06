@@ -43,6 +43,10 @@ pub struct CliOpts {
     /// Enable debug mode.
     #[arg(long, value_name = "DEBUG", default_value_t = false)]
     pub debug: bool,
+    
+    /// Number of threads to use.
+    #[arg(short = 't', long, value_name = "THREADS", default_value_t = 512)]
+    pub threads: usize,
 
     #[clap(long, action = clap::ArgAction::HelpLong)]
     help: Option<bool>,
