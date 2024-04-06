@@ -5,7 +5,7 @@ Converts [BigDomain](https://www.bigdomaindata.com/) data from CSV to Mongo.
 ### Requirements
 - [Rust](https://www.rust-lang.org/tools/install) - If you want to compile from source.
 - [MongoDB](https://www.mongodb.com/try/download/community)
-- [BigDomain](https://www.bigdomaindata.com/) data in CSV format
+- [BigDomain](https://www.bigdomaindata.com/) data in CSV format [Samples Download](https://www.bigdomaindata.com/free-whois-database/)
 
 ### Help
 ```bash
