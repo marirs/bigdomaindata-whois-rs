@@ -39,12 +39,14 @@ lazy_static! {
     static ref MONGODB_DB: String = CLI_OPTS.mongo_db.clone();
     static ref MONGODB_COLLECTION: String = CLI_OPTS.mongo_collection.clone();
     static ref DEBUG: bool = CLI_OPTS.debug;
-    // Number of threads to use
+
+    // Number of threads to use (defaults to 512)
     static ref THREADS: usize = CLI_OPTS.threads;
 
-    // Read from CSV files if use directory subcommand is called
+    // Read from CSV files
     static ref CSV_FILES_PATH: String = CLI_OPTS.csv_files_path.to_owned();
-    // Get daily whois data if daily subcommand is called
+
+    // Get daily whois data if --daily flag is set
     static ref DAILY: bool = CLI_OPTS.daily;
     static ref DOWNLOAD_URL: String = format!(
                 "https://bigdomaindata.s3.amazonaws.com/updates/{}_{}.zip",
