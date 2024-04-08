@@ -8,6 +8,13 @@ use std::{process::exit, time::Instant};
 use tokio::spawn;
 use whois::WhoIsRecord;
 
+#[cfg(not(target_env = "msvc"))]
+use jemallocator::Jemalloc;
+
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 mod config;
 mod daily;
 mod db;

@@ -1,6 +1,6 @@
 [package]
 name = "whois"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Marirs <marirs@gmail.com>"]
 description = "Convert BigDomain Whois CSV data to MongoDB"
 keywords = ["whois", "mongodb", "csv", "bigdomain", "data"]
@@ -24,6 +24,9 @@ serde_yaml = "0.9"
 thiserror = "1.0.58"
 tokio = { version = "1", features = ["full"] }
 zip_next = "0.11.0"
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = "0.5.4"
 
 [[bin]]
 name = "whois"
