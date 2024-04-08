@@ -32,7 +32,7 @@ impl fmt::Display for WhoIsRecord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            " num: {}\n domain_name: {}\n domain_keyword: {}\n domain_tld: {}\n query_time: {}\n create_date: {:?}\n update_date: {:?}\n expiry_date: {:?}\n registrar_iana: {:?}\n registrar_name: {:?}\n registrar_website: {:?}\n registrant_name: {:?}\n registrant_company: {:?}\n registrant_address: {:?}\n registrant_city: {:?}\n registrant_state: {:?}\n registrant_zip: {:?}\n registrant_country: {:?}\n registrant_phone: {:?}\n registrant_fax: {:?}\n registrant_email: {:?}\n name_servers: {:?}",
+            "num: {}\ndomain_name: {}\ndomain_keyword: {}\ndomain_tld: {}\nquery_time: {}\ncreate_date: {:?}\nupdate_date: {:?}\nexpiry_date: {:?}\nregistrar_iana: {:?}\nregistrar_name: {:?}\nregistrar_website: {:?}\nregistrant_name: {:?}\nregistrant_company: {:?}\nregistrant_address: {:?}\nregistrant_city: {:?}\nregistrant_state: {:?}\nregistrant_zip: {:?}\nregistrant_country: {:?}\nregistrant_phone: {:?}\nregistrant_fax: {:?}\nregistrant_email: {:?}\nname_servers: {:?}",
             self.num,
             self.domain_name,
             self.domain_keyword,
