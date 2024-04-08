@@ -1,6 +1,8 @@
-use mongodb::bson::{doc, Document};
+use crate::{db, Result, MONGODB_COLLECTION, MONGODB_DB, MONGO_CLIENT};
+use log::info;
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::fs::read_to_string;
+use tokio::spawn;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct WhoIsRecord {
@@ -28,64 +30,50 @@ pub struct WhoIsRecord {
     pub name_servers: Option<String>,
 }
 
-impl fmt::Display for WhoIsRecord {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "num: {}\ndomain_name: {}\ndomain_keyword: {}\ndomain_tld: {}\nquery_time: {}\ncreate_date: {:?}\nupdate_date: {:?}\nexpiry_date: {:?}\nregistrar_iana: {:?}\nregistrar_name: {:?}\nregistrar_website: {:?}\nregistrant_name: {:?}\nregistrant_company: {:?}\nregistrant_address: {:?}\nregistrant_city: {:?}\nregistrant_state: {:?}\nregistrant_zip: {:?}\nregistrant_country: {:?}\nregistrant_phone: {:?}\nregistrant_fax: {:?}\nregistrant_email: {:?}\nname_servers: {:?}",
-            self.num,
-            self.domain_name,
-            self.domain_keyword,
-            self.domain_tld,
-            self.query_time,
-            self.create_date,
-            self.update_date,
-            self.expiry_date,
-            self.registrar_iana,
-            self.registrar_name,
-            self.registrar_website,
-            self.registrant_name,
-            self.registrant_company,
-            self.registrant_address,
-            self.registrant_city,
-            self.registrant_state,
-            self.registrant_zip,
-            self.registrant_country,
-            self.registrant_phone,
-            self.registrant_fax,
-            self.registrant_email,
-            self.name_servers
-        )
+impl WhoIsRecord {
+    /// Read the csv file and return a vector of `WhoIsRecord`
+    pub fn from_file(path: &str) -> Result<Vec<Self>> {
+        Ok(csv_de(&read_to_string(path)?)?)
     }
-}
 
-impl From<&WhoIsRecord> for Document {
-    fn from(value: &WhoIsRecord) -> Self {
-        doc! {
-            "num": value.num,
-            "domain_name": &value.domain_name,
-            "domain_keyword": &value.domain_keyword,
-            "domain_tld": &value.domain_tld,
-            "query_time": &value.query_time,
-            "create_date": &value.create_date,
-            "update_date": &value.update_date,
-            "expiry_date": &value.expiry_date,
-            "registrar_iana": &value.registrar_iana,
-            "registrar_name": &value.registrar_name,
-            "registrar_website": &value.registrar_website,
-            "registrant_name": &value.registrant_name,
-            "registrant_company": &value.registrant_company,
-            "registrant_address": &value.registrant_address,
-            "registrant_city": &value.registrant_city,
-            "registrant_state": &value.registrant_state,
-            "registrant_zip": &value.registrant_zip,
-            "registrant_country": &value.registrant_country,
-            "registrant_phone": &value.registrant_phone,
-            "registrant_fax": &value.registrant_fax,
-            "registrant_email": &value.registrant_email,
-            "name_servers": &value.name_servers,
+    /// Read the csv buffer and return a vector of `WhoIsRecord`
+    pub fn from_buffer(buffer: &str) -> Result<Vec<Self>> {
+        Ok(csv_de(buffer)?)
+    }
+
+    pub async fn save(records: Vec<WhoIsRecord>) {
+        //! Save the records to the database.
+        let chunked_records = records.chunks(5000).map(|x| x.to_vec()).collect::<Vec<_>>();
+        let mut handles = Vec::new();
+
+        info!(
+            "Saving {} records to the database. This may take a while...",
+            records.len()
+        );
+        for records in chunked_records {
+            let mongo_client_ref = MONGO_CLIENT.clone();
+            handles.push(spawn(async move {
+                let mongo_client_ref = mongo_client_ref.clone();
+                // save the records
+                db::upsert(
+                    mongo_client_ref.clone(),
+                    MONGODB_DB.as_str(),
+                    MONGODB_COLLECTION.as_str(),
+                    records.to_vec(),
+                )
+                .await
+                .unwrap();
+                info!("Saved {} records to the database", records.len());
+            }));
         }
+
+        futures::future::join_all(handles).await;
     }
 }
 
-impl WhoIsRecord {}
+/// deserialize the csv text into a vector of `WhoIsRecord`
+fn csv_de(csv_text: &str) -> std::result::Result<Vec<WhoIsRecord>, csv::Error> {
+    csv::Reader::from_reader(csv_text.as_bytes())
+        .deserialize()
+        .collect()
+}
