@@ -43,6 +43,23 @@ pub struct CliOpts {
     /// Enable debug mode.
     #[arg(long, value_name = "DEBUG", default_value_t = false)]
     pub debug: bool,
+    /// daily download
+    #[arg(
+        long,
+        value_name = "DAILY",
+        default_value_t = false,
+        required(false),
+        requires_if("true", "download_code")
+    )]
+    pub daily: bool,
+    /// download code
+    #[arg(
+        long,
+        value_name = "DOWNLOAD-CODE",
+        default_value = "",
+        required(false)
+    )]
+    pub download_code: String,
 
     /// Number of threads to use.
     #[arg(short = 't', long, value_name = "THREADS", default_value_t = 512)]

@@ -1,4 +1,4 @@
-use crate::WhoIsRecord;
+use crate::whois::WhoIsRecord;
 use log::{debug, info};
 use mongodb::{bson::doc, options::UpdateOptions, sync::Client};
 use tokio::task::spawn_blocking;

@@ -14,4 +14,8 @@ pub enum Error {
     Yaml(#[from] serde_yaml::Error),
     #[error("Tokio error: {0}")]
     Tokio(#[from] tokio::task::JoinError),
+    #[error("ZipArchive Error: {0}")]
+    Zip(#[from] zip::result::ZipError),
+    #[error("{0}")]
+    Generic(String),
 }
