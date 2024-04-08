@@ -49,7 +49,7 @@ lazy_static! {
     static ref DOWNLOAD_URL: String = format!(
                 "https://bigdomaindata.s3.amazonaws.com/updates/{}_{}.zip",
                 CLI_OPTS.download_code,
-                (Local::now() - Duration::days(2)).format("%Y-%m-%d"));
+                (Local::now() - Duration::days(1)).format("%Y-%m-%d"));
 
     static ref MONGO_CLIENT: Client = Client::with_uri_str(MONGODB_URL.as_str()).unwrap();
 }
