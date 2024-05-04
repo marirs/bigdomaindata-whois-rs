@@ -1,7 +1,7 @@
 use crate::{whois::WhoIsRecord, Result};
 use log::info;
 use std::io::{Cursor, Read};
-use zip_next::read::ZipArchive;
+use zip::read::ZipArchive;
 
 /// Download the zip file and extract the contents and
 /// save the records to the database.

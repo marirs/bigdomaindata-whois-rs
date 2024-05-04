@@ -15,5 +15,5 @@ pub enum Error {
     #[error("Tokio error: {0}")]
     Tokio(#[from] tokio::task::JoinError),
     #[error("ZipArchive Error: {0}")]
-    Zip(#[from] zip_next::result::ZipError),
+    Zip(#[from] zip::result::ZipError),
 }

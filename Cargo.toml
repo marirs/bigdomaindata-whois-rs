@@ -1,6 +1,6 @@
 [package]
 name = "whois"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Marirs <marirs@gmail.com>"]
 description = "Convert BigDomain Whois CSV data to MongoDB"
 keywords = ["whois", "mongodb", "csv", "bigdomain", "data"]
@@ -19,11 +19,11 @@ log = "0.4.21"
 mongodb = { version = "2.8.2", default-features = false, features = ["sync"]}
 reqwest = { version = "0.12.3", features = ["native-tls-vendored"] }
 serde = { version = "1.0.197", features = ["derive"] }
-simple_logger = "4.3.3"
+simple_logger = "5.0.0"
 serde_yaml = "0.9"
 thiserror = "1.0.58"
 tokio = { version = "1", features = ["full"] }
-zip_next = "1.0.1"
+zip = "1.1.3"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 jemallocator = "0.5.4"
