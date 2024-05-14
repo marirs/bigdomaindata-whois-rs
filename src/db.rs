@@ -1,9 +1,8 @@
 use crate::whois::WhoIsRecord;
-use log::{debug, info};
+use log::{info};
 use mongodb::{
-    bson,
     bson::{doc, Document},
-    options::{DeleteOptions, InsertManyOptions, UpdateOptions},
+    options::{DeleteOptions, InsertManyOptions},
     sync::Client,
 };
 use tokio::task::spawn_blocking;
@@ -51,9 +50,9 @@ pub(crate) async fn upsert(
     }
 
     let options = InsertManyOptions::builder().build();
-    let delete_options = DeleteOptions::builder().build();
+    let _delete_options = DeleteOptions::builder().build();
 
-    let result = spawn_blocking(move || {
+    spawn_blocking(move || {
         collection
             .delete_many(
                 doc! {"domain_name" : {
