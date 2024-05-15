@@ -1,9 +1,10 @@
 use crate::whois::WhoIsRecord;
-use log::{info};
+use log::info;
 use mongodb::{
     bson::{doc, Document},
     options::{DeleteOptions, InsertManyOptions},
     sync::Client,
+    IndexModel,
 };
 use tokio::task::spawn_blocking;
 
@@ -19,9 +20,19 @@ pub(crate) async fn upsert(
     let db = client.database(database);
     let collection = db.collection::<Document>(collection);
 
+    // create an index
+    let index = IndexModel::builder()
+        .keys(doc! {
+            "domain_name": 1
+        })
+        .build();
+    let idx = collection.create_index(index, None).ok();
+    info!("Index created: {:?}", idx);
+
+    // convert into documents
     let mut documents = Vec::new();
     let mut domain_names_filter = Vec::new();
-    for record in records {
+    for record in records.iter().cloned() {
         let document = doc! {
             "domain_name": &record.domain_name,
             "domain_keyword": &record.domain_keyword,
@@ -64,6 +75,9 @@ pub(crate) async fn upsert(
         collection.insert_many(documents, options).ok();
     })
     .await?;
-    info!("Successfully saved  records to the database");
+    info!(
+        "Successfully saved \"{}\" records into the database",
+        records.len()
+    );
     Ok(())
 }
